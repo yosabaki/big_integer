@@ -8,13 +8,6 @@ set(COVERAGE OFF CACHE BOOL "Coverage")
 
 include_directories(${big_integer_SOURCE_DIR})
 
-target_compile_options(tests PRIVATE -std=c++14 -g -Wall -Werror -Wextra -Wpedantic -Wconversion -Wswitch-default -Wswitch-enum -Wunreachable-code -Wwrite-strings -Wcast-align -Wshadow -Wundef)
-
-if (COVERAGE)
-    target_compile_options(tests PRIVATE --coverage)
-    target_link_libraries(tests PRIVATE --coverage)
-endif()
-
 add_executable(big_integer_testing
         ../big_integer_testing.cpp
         ../big_integer.h
@@ -22,6 +15,14 @@ add_executable(big_integer_testing
         ../gtest/gtest-all.cc
         ../gtest/gtest.h
         ../gtest/gtest_main.cc)
+
+
+target_compile_options(big_integer_testing PRIVATE -std=c++14 -g -Wall -Werror -Wextra -Wpedantic -Wconversion -Wswitch-default -Wswitch-enum -Wunreachable-code -Wwrite-strings -Wcast-align -Wshadow -Wundef)
+
+if (COVERAGE)
+    target_compile_options(tests PRIVATE --coverage)
+    target_link_libraries(tests PRIVATE --coverage)
+endif()
 
 
 target_link_libraries(big_integer_testing)
