@@ -12,12 +12,11 @@ add_executable(big_integer_testing
         ./big_integer_testing.cpp
         ./big_integer.h
         ./big_integer.cpp
-        ./gtest/gtest-all.cc
-        ./gtest/gtest.h
-        ./gtest/gtest_main.cc)
+        )
 
+target_link_libraries(big_integer_testing gtest)
 
-target_compile_options(big_integer_testing PRIVATE -std=c++14 -g -Wall -Wextra -Wpedantic -Wconversion -Wswitch-default -Wswitch-enum -Wunreachable-code -Wwrite-strings -Wcast-align -Wshadow -Wundef)
+target_compile_options(big_integer_testing PRIVATE -std=c++17 -g)
 
 if (COVERAGE)
     target_compile_options(tests PRIVATE --coverage)

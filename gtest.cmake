@@ -1,13 +1,14 @@
 set(GOOGLETEST_ROOT gtest/googletest CACHE STRING "Google Test source root")
 
 include_directories(SYSTEM
-        ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}
-        ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}/include
+        ${PROJECT_SOURCE_DIR}/gtest
+        ${PROJECT_SOURCE_DIR}/gtest/include
         )
 
 set(GOOGLETEST_SOURCES
-        ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}/src/gtest-all.cc
-        ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}/src/gtest_main.cc
+        ${PROJECT_SOURCE_DIR}/gtest/gtest-all.cc
+        ${PROJECT_SOURCE_DIR}/gtest/gtest_main.cc
+        ${PROJECT_SOURCE_DIR}/gtest/gtest.h
         )
 
 foreach(_source ${GOOGLETEST_SOURCES})
