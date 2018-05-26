@@ -66,21 +66,29 @@ big_integer &big_integer::operator=(big_integer const &other) {
 }
 
 big_integer &big_integer::operator+=(big_integer const &rhs) {
-    big_integer c;
     size_t size = std::max(this->size(), rhs.size()) + 1;
-    c.digits.resize(size);
-    long long tmp = 0;
-    char carry = 0;
-    for (size_t i = 0; i < size; i++) {
-        tmp = (long long) this->get_digit(i) + rhs.get_digit(i) + carry;
-        if (tmp > UINT32_MAX) {
+    size_t min_size = std::min(this->size(), rhs.size());
+    unsigned int tmp = 0;
+    this->digits.resize(size, (this->sign ? UINT32_MAX : 0));
+    char carry = 0, tmpcarry;
+    for (size_t i = 0; i < min_size; i++) {
+        tmpcarry = carry;
+        tmp = this->digits[i] + rhs.digits[i];
+        if (UINT32_MAX - this->digits[i] < rhs.digits[i] || (!(~tmp) && carry)) {
             carry = 1;
-            tmp &= UINT32_MAX;
         } else carry = 0;
-        c.digits[i] = (unsigned int) tmp;
+        this->digits[i] = tmp + tmpcarry;
     }
-    c.sign = (((c.digits.back() >> 31) & 1) == 1);
-    *this = c;
+    for (size_t i = min_size; i < size; i++) {
+        tmpcarry = carry;
+        unsigned int li = this->get_digit(i), ri = rhs.get_digit(i);
+        tmp = li + ri;
+        if (UINT32_MAX - li < ri || (!(~tmp) && carry)) {
+            carry = 1;
+        } else carry = 0;
+        this->digits[i] = tmp + tmpcarry;
+    }
+    this->sign = this->digits.back();
     this->delete_leading_zeros();
     return *this;
 }
@@ -204,14 +212,17 @@ big_integer &big_integer::operator^=(big_integer const &rhs) {
 void big_integer::delete_leading_zeros() {
     unsigned int word = (sign ? UINT32_MAX : 0);
     if (digits[size() - 1] != word) {
-        digits.push_back(word);
+        digits.resize(size() + 1, word);
         return;
     }
+    size_t true_size = size();
     for (size_t i = size() - 1; i > 1; i--) {
-        if (digits[i] == word && digits[i - 1] == word) {
-            digits.pop_back();
-        } else return;
+        if (digits[i - 1] == word) {
+            true_size--;
+        } else
+            break;
     }
+    digits.resize(true_size);
 }
 
 big_integer &big_integer::operator<<=(int rhs) {
@@ -222,7 +233,7 @@ big_integer &big_integer::operator<<=(int rhs) {
     c.digits.resize(size);
     for (size_t i = prev; i < size; i++) {
         c.digits[i] = (this->get_digit(i - prev) << (rhs % 32)) |
-                      (unsigned int) (((unsigned long long) this->get_digit(i - prev - 1) >> (32 - (rhs % 32))));
+                      (unsigned int) ((unsigned long long) this->get_digit(i - prev - 1) >> (32 - (rhs % 32)));
     }
     c.sign = (((c.digits.back() >> 31) & 1) == 1);
     *this = c;
@@ -264,7 +275,7 @@ size_t big_integer::size() const {
 
 big_integer big_integer::operator~() const {
     big_integer r;
-    r.digits.resize(digits.size());
+    r.digits.resize(size());
     for (size_t i = 0; i < r.size(); i++)
         r.digits[i] = ~digits[i];
     r.sign = !sign;
@@ -322,12 +333,9 @@ big_integer operator*(big_integer a, unsigned int const &b) {
     c.digits.resize(a.size());
     unsigned int carry = 0;
     for (size_t i = 0; i < c.size(); i++) {
-        unsigned long long tmp = (unsigned long long) b * a.get_digit(i) + carry;
+        unsigned long long tmp = (unsigned long long) b * a.digits[i] + carry;
         c.digits[i] = (unsigned int) tmp;
         carry = (unsigned int) (tmp >> 32);
-    }
-    if (carry) {
-        c.digits.push_back(carry);
     }
     if (c.sign) c = -c;
     c.delete_leading_zeros();
@@ -422,7 +430,7 @@ std::string to_string(big_integer const &a) {
         tmp = -tmp;
     }
     while (!tmp.is_zero()) {
-        unsigned int c = (tmp % int(1e9)).get_digit(0);
+        unsigned int c = (tmp % int(1e9)).digits[0];
         tmp /= int(1e9);
         bool b = tmp.is_zero();
         for (int i = 0; i < 9; i++) {
