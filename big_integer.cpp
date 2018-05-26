@@ -5,10 +5,9 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <bitset>
 
-big_integer::big_integer() {
-    digits.assign(2, 0);
-    sign = 0;
+big_integer::big_integer() : sign(false), digits{0, 0} {
 }
 
 big_integer::big_integer(big_integer const &other) {
@@ -16,10 +15,7 @@ big_integer::big_integer(big_integer const &other) {
     sign = other.sign;
 }
 
-big_integer::big_integer(unsigned int a) {
-    digits.assign(2, 0);
-    digits[0] = a;
-}
+big_integer::big_integer(unsigned int a) : sign(false), digits{a, 0} {}
 
 big_integer::big_integer(int a) {
     digits.assign(2, 0);
@@ -31,7 +27,7 @@ big_integer::big_integer(int a) {
 }
 
 big_integer::big_integer(std::string const &str) {
-    bool neg = 0;
+    bool neg = false;
     if (str[0] == '-') {
         neg = true;
     }
@@ -48,7 +44,7 @@ big_integer::big_integer(std::string const &str) {
             t *= 10;
             t += str[i + j] - '0';
         }
-        *this *= int(pow(10, j));
+        *this = *this * int(pow(10, j));
         *this += t;
     }
     if (neg) *this = -*this;
@@ -147,13 +143,14 @@ big_integer big_integer::divide2n1n(big_integer const &rhs, big_integer &quontie
     unsigned int b = right.digits[r - 1];
     l--;
     for (int j = l - r; j > -1; j--) {
-        unsigned long long a = (((unsigned long long) left.get_digit(j + r) << 32) + left.get_digit(j + r - 1));
+        unsigned long long a = (((unsigned long long) left.get_digit(j + r) << 32) + left.digits[j + r - 1]);
         unsigned long long qi = std::min(a / b, (unsigned long long) UINT32_MAX - 1);
         unsigned long long ri = a % b;
         while (ri < UINT32_MAX && qi * right.get_digit(r - 2) > (ri << 32) + left.get_digit(j + r - 2)) {
             qi--;
             ri += b;
         }
+
         left -= right * qi << (32 * j);
         big_integer tmp((unsigned int) qi);
         quontient += tmp << (j * 32);
@@ -207,7 +204,7 @@ big_integer &big_integer::operator%=(big_integer const &rhs) {
 template<class FunctorT>
 big_integer &big_integer::bitwise_operation(big_integer const &rhs, FunctorT functor) {
     for (size_t i = 0; i < size(); i++) {
-        this->digits[i] = functor(this->get_digit(i), rhs.get_digit(i));
+        this->digits[i] = functor(this->digits[i], rhs.get_digit(i));
     }
     sign = (((digits.back() >> 31) & 1) == 1);
     this->delete_leading_zeros();
@@ -248,7 +245,8 @@ big_integer &big_integer::operator<<=(int rhs) {
     int prev = rhs / 32, step = rhs % 32;
     size_t size = this->size() + prev + 1;
     c.digits.resize(size);
-    for (size_t i = prev; i < size; i++) {
+    c.digits[prev] = this->digits[0] << step;
+    for (size_t i = prev + 1; i < size; i++) {
         c.digits[i] = (this->get_digit(i - prev) << step) |
                       (unsigned int) ((unsigned long long) this->get_digit(i - prev - 1) >> (32 - step));
     }
@@ -264,7 +262,7 @@ big_integer &big_integer::operator>>=(int rhs) {
     int size = std::max((int) this->size() - prev, 2);
     for (int i = 0; i < size; i++) {
         this->digits[i] =
-                (this->get_digit(i + prev + 1) << (32 - step)) | (this->get_digit(i + prev) >> step);
+                (this->get_digit(i + prev + 1) << (32 - step)) | (this->digits[i + prev] >> step);
     }
     this->digits.resize(size);
     if (size == 0) this->digits.push_back(0);
