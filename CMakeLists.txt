@@ -13,12 +13,12 @@ add_executable(big_integer_testing
         ./big_integer.h
         ./big_integer.cpp
         )
-find_package (Threads)
+find_package(Threads)
 target_link_libraries(big_integer_testing gtest ${CMAKE_THREAD_LIBS_INIT})
 
 target_compile_options(big_integer_testing PRIVATE -std=c++17 -g)
 
 if (COVERAGE)
-    target_compile_options(tests PRIVATE --coverage)
-    target_link_libraries(tests PRIVATE --coverage)
-endif()
+    target_compile_options(big_integer_testing PRIVATE --coverage)
+    target_link_libraries(big_integer_testing PRIVATE --coverage)
+endif ()
