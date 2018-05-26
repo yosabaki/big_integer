@@ -75,9 +75,8 @@ struct big_integer {
 
 private:
 
-    big_integer karatsuba(big_integer const &rhs);
-
-    big_integer mul_long(big_integer const &rhs);
+    template<class FunctorT>
+    big_integer &bitwise_operation(big_integer const &rhs, FunctorT functor);
 
     big_integer divide2n1n(big_integer const &rhs, big_integer &quontient);
 
