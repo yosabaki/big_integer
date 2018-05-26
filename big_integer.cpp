@@ -114,7 +114,7 @@ big_integer big_integer::divide2n1n(big_integer const &rhs, big_integer &quontie
     right *= (unsigned int) d;
     unsigned int b = right.get_digit(r - 1);
     l--;
-    for (size_t j = l - r; j; j--) {
+    for (int j = l - r; j > -1; j--) {
         unsigned long long a = (((unsigned long long) left.get_digit(j + r) << 32) + left.get_digit(j + r - 1));
         unsigned long long qi = std::min(a / b, (unsigned long long) UINT32_MAX - 1);
         unsigned long long ri = a % b;
@@ -403,6 +403,7 @@ bool operator<(big_integer const &a, big_integer const &b) {
 bool operator>(big_integer const &a, big_integer const &b) {
     return a.cmp(b) > 0;
 }
+
 //f
 bool operator<=(big_integer const &a, big_integer const &b) {
     return !(a > b);
