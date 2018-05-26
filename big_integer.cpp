@@ -62,7 +62,6 @@ big_integer &big_integer::operator=(big_integer const &other) {
 
 big_integer &big_integer::operator+=(big_integer const &rhs) {
     size_t size = std::max(this->size(), rhs.size()) + 1;
-    size_t min_size = this->size();
     unsigned int word = (rhs.sign ? UINT32_MAX : 0);
     this->digits.resize(size, (this->sign ? UINT32_MAX : 0));
     unsigned int tmp = 0;
@@ -159,12 +158,9 @@ big_integer big_integer::divide2n1n(big_integer const &rhs, big_integer &quontie
 }
 
 big_integer &big_integer::operator/=(big_integer const &rhs) {
-    // find sign of result
     bool neg = this->sign ^rhs.sign;
-    // do divide operations with absolute values of arguments;
     big_integer left = abs(*this), right = abs(rhs);
 
-    // check that divisor doesn't equal zero
     if (rhs.is_zero()) {
         throw std::runtime_error("Division by zero");
     }
@@ -181,12 +177,9 @@ big_integer &big_integer::operator/=(big_integer const &rhs) {
 }
 
 big_integer &big_integer::operator%=(big_integer const &rhs) {
-    // find sign of result
     bool neg = this->sign;
-    // do module operations with absolute values of arguments;
     big_integer left = abs(*this), right = abs(rhs);
 
-    // check that divisor doesn't equal zero
     if (rhs.is_zero()) {
         throw std::runtime_error("Module of zero");
     }
@@ -338,21 +331,20 @@ big_integer operator*(big_integer a, big_integer const &b) {
 }
 
 big_integer operator*(big_integer a, unsigned int const &b) {
-    big_integer c;
+    bool neg = false;
     if (a.sign) {
-        c.sign = true;
+        neg = true;
         a = -a;
     }
-    c.digits.resize(a.size());
     unsigned int carry = 0;
-    for (size_t i = 0; i < c.size(); i++) {
+    for (size_t i = 0; i < a.size(); i++) {
         unsigned long long tmp = (unsigned long long) b * a.digits[i] + carry;
-        c.digits[i] = (unsigned int) tmp;
+        a.digits[i] = (unsigned int) tmp;
         carry = (unsigned int) (tmp >> 32);
     }
-    if (c.sign) c = -c;
-    c.delete_leading_zeros();
-    return c;
+    if (neg) a = -a;
+    a.delete_leading_zeros();
+    return a;
 }
 
 big_integer operator/(big_integer a, big_integer const &b) {
