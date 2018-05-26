@@ -22,6 +22,3 @@ if (COVERAGE)
     target_compile_options(tests PRIVATE --coverage)
     target_link_libraries(tests PRIVATE --coverage)
 endif()
-
-
-target_link_libraries(big_integer_testing)
