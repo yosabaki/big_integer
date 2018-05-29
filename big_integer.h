@@ -78,7 +78,9 @@ private:
     template<class FunctorT>
     big_integer &bitwise_operation(big_integer const &rhs, FunctorT functor);
 
-    big_integer divide2n1n(big_integer const &rhs, big_integer &quontient);
+    big_integer &sub_from(big_integer const &rhs, int pos);
+
+    big_integer divide2n1n(big_integer &rhs);
 
     void delete_leading_zeros();
 

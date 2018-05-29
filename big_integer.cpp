@@ -1,11 +1,11 @@
 #include "big_integer.h"
 
 #include <cstring>
-#include <stdexcept>
 #include <cmath>
 #include <algorithm>
-#include <iostream>
-#include <bitset>
+#include <cstdint>
+#include <cctype>
+#include <stdexcept>
 
 big_integer::big_integer() : sign(false), digits{0, 0} {
 }
@@ -97,7 +97,7 @@ big_integer &big_integer::operator-=(big_integer const &rhs) {
     for (size_t i = 0; i < rhs.size(); i++) {
         tmpcarry = carry;
         tmp = this->digits[i] + ~rhs.digits[i];
-        if (UINT32_MAX - this->digits[i] < ~rhs.digits[i] || (!(~tmp) && carry)) {
+        if (UINT32_MAX - this->digits[i] < ~rhs.digits[i] || !(tmp + carry)) {
             carry = 1;
         } else carry = 0;
         this->digits[i] = tmp + tmpcarry;
@@ -131,67 +131,78 @@ big_integer &big_integer::operator*=(big_integer const &rhs) {
     return *this;
 }
 
+big_integer &big_integer::sub_from(big_integer const &rhs, int pos) {
+    unsigned int word = (!rhs.sign ? UINT32_MAX : 0);
+    unsigned int tmp = 0;
+    char carry = 1, tmpcarry;
+    for (size_t i = 0; i < rhs.size(); i++) {
+        tmpcarry = carry;
+        tmp = this->digits[i + pos] + ~rhs.digits[i];
+        if (UINT32_MAX - this->digits[i + pos] < ~rhs.digits[i] || !(tmp + carry)) {
+            carry = 1;
+        } else carry = 0;
+        this->digits[i + pos] = tmp + tmpcarry;
+    }
+    for (size_t i = rhs.size(); i + pos < this->size(); i++) {
+        tmpcarry = carry;
+        unsigned int li = this->digits[i + pos];
+        tmp = li + word;
+        if (UINT32_MAX - li < word || !(~tmp) && carry) {
+            carry = 1;
+        } else carry = 0;
+        this->digits[i + pos] = tmp + tmpcarry;
+    }
+    this->sign = this->digits.back();
+    this->delete_leading_zeros();
+    return *this;
+}
 
-big_integer big_integer::divide2n1n(big_integer const &rhs, big_integer &quontient) {
-    quontient = 0;
-    big_integer left = *this, right = rhs;
+big_integer big_integer::divide2n1n(big_integer &rhs) {
+    big_integer left = *this;
     size_t r = rhs.size() - 1, l = this->size();
-    unsigned int d = UINT32_MAX / (right.digits[r - 1] + 1);
+    unsigned int d = UINT32_MAX / (rhs.digits[r - 1] + 1);
     left *= d;
-    right *= d;
-    unsigned int b = right.digits[r - 1];
+    rhs *= d;
+    unsigned int b = rhs.digits[r - 1];
     l--;
+    this->digits.resize(l - r + 1);
     for (int j = l - r; j > -1; j--) {
-        unsigned long long a = (((unsigned long long) left.get_digit(j + r) << 32) + left.digits[j + r - 1]);
+        unsigned long long a = (((unsigned long long) left.digits[j + r] << 32) + left.digits[j + r - 1]);
         unsigned long long qi = std::min(a / b, (unsigned long long) UINT32_MAX - 1);
         unsigned long long ri = a % b;
-        while (ri < UINT32_MAX && qi * right.get_digit(r - 2) > (ri << 32) + left.get_digit(j + r - 2)) {
+        while (ri < UINT32_MAX && qi * rhs.get_digit(r - 2) > (ri << 32) + left.digits[j + r - 2]) {
             qi--;
             ri += b;
         }
-
-        left -= right * qi << (32 * j);
-        big_integer tmp((unsigned int) qi);
-        quontient += tmp << (j * 32);
+        left.sub_from(rhs * qi, j);
+        this->digits[j] = (unsigned int) qi;
     }
-    return *this - quontient * rhs;
+    this->delete_leading_zeros();
+    return *this;
 }
 
 big_integer &big_integer::operator/=(big_integer const &rhs) {
     bool neg = this->sign ^rhs.sign;
-    big_integer left = abs(*this), right = abs(rhs);
-
+    big_integer right = abs(rhs);
+    *this = abs(*this);
     if (rhs.is_zero()) {
         throw std::runtime_error("Division by zero");
     }
-    if (left < right) {
+    if (*this < right) {
         *this = 0;
         return *this;
     }
-    big_integer quontient;
-    left.divide2n1n(right, quontient);
-    *this = quontient;
+    this->divide2n1n(right);
     if (neg) *this = -*this;
     this->delete_leading_zeros();
     return *this;
 }
 
 big_integer &big_integer::operator%=(big_integer const &rhs) {
-    bool neg = this->sign;
-    big_integer left = abs(*this), right = abs(rhs);
-
     if (rhs.is_zero()) {
         throw std::runtime_error("Module of zero");
     }
-    if (left < right) {
-        *this = left;
-        return *this;
-    }
-    big_integer quontient;
-    *this = left.divide2n1n(right, quontient);
-    if (neg) *this = -*this;
-    this->delete_leading_zeros();
-    return *this;
+    return *this -= (*this / rhs) * rhs;
 }
 
 template<class FunctorT>
@@ -199,7 +210,7 @@ big_integer &big_integer::bitwise_operation(big_integer const &rhs, FunctorT fun
     for (size_t i = 0; i < size(); i++) {
         this->digits[i] = functor(this->digits[i], rhs.get_digit(i));
     }
-    sign = (((digits.back() >> 31) & 1) == 1);
+    sign = digits.back();
     this->delete_leading_zeros();
     return *this;
 }
@@ -234,17 +245,18 @@ void big_integer::delete_leading_zeros() {
 
 big_integer &big_integer::operator<<=(int rhs) {
     if (rhs < 0) return *this >>= (-rhs);
-    big_integer c;
     int prev = rhs / 32, step = rhs % 32;
     size_t size = this->size() + prev + 1;
-    c.digits.resize(size);
-    c.digits[prev] = this->digits[0] << step;
-    for (size_t i = prev + 1; i < size; i++) {
-        c.digits[i] = (this->get_digit(i - prev) << step) |
-                      (unsigned int) ((unsigned long long) this->get_digit(i - prev - 1) >> (32 - step));
+    this->digits.resize(size, this->sign ? UINT32_MAX : 0);
+    for (size_t i = size - 1; i > prev; i--) {
+        this->digits[i] = (this->digits[i - prev] << step) |
+                          (unsigned int) ((unsigned long long) this->digits[i - prev - 1] >> (32 - step));
     }
-    c.sign = (((c.digits.back() >> 31) & 1) == 1);
-    *this = c;
+    this->digits[prev] = this->digits[0] << step;
+    for (int i = 0; i < prev; i++) {
+        this->digits[i] = 0;
+    }
+    this->sign = this->digits.back();
     this->delete_leading_zeros();
     return *this;
 }
@@ -336,14 +348,13 @@ big_integer operator*(big_integer a, unsigned int const &b) {
         neg = true;
         a = -a;
     }
-    unsigned int carry = 0;
+    unsigned long long carry = 0;
     for (size_t i = 0; i < a.size(); i++) {
         unsigned long long tmp = (unsigned long long) b * a.digits[i] + carry;
         a.digits[i] = (unsigned int) tmp;
-        carry = (unsigned int) (tmp >> 32);
+        carry = (tmp >> 32);
     }
     if (neg) a = -a;
-    a.delete_leading_zeros();
     return a;
 }
 
@@ -427,7 +438,7 @@ bool operator>=(big_integer const &a, big_integer const &b) {
 }
 
 std::string to_string(big_integer const &a) {
-    std::string res;
+    std::string res; //fadda
     big_integer tmp = a;
     bool sign = false;
     if (tmp.sign) {
@@ -452,3 +463,6 @@ std::string to_string(big_integer const &a) {
 std::ostream &operator<<(std::ostream &s, big_integer const &a) {
     return s << to_string(a);
 }
+/*
+ *  * C:\Users\artyo\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\173.4548.31\bin\cmake\bin\cmake.exe .
+ */
