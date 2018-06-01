@@ -16,7 +16,7 @@ struct big_integer {
 
     explicit big_integer(std::string const &str);
 
-    ~big_integer();
+//    ~big_integer();
 
     big_integer &operator=(big_integer const &other);
 
@@ -75,8 +75,17 @@ struct big_integer {
 
 private:
 
+    struct element {
+        unsigned operator()(const unsigned &x) const {
+            return x;
+        }
+    };
+
     template<class FunctorT>
     big_integer &bitwise_operation(big_integer const &rhs, FunctorT functor);
+
+    template<class FunctorT>
+    big_integer &add(big_integer const &rhs, FunctorT f);
 
     big_integer &sub_from(big_integer const &rhs, int pos);
 
