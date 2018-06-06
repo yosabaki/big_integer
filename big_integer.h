@@ -89,6 +89,8 @@ private:
 
     big_integer &sub_from(big_integer const &rhs, int pos);
 
+    big_integer &add_from(big_integer const &rhs, int pos);
+
     big_integer divide2n1n(big_integer &rhs);
 
     void delete_leading_zeros();
