@@ -1,25 +1,24 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 project(big_integer)
-include(gtest.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(${big_integer_SOURCE_DIR})
 
-SET(COVERAGE OFF CACHE BOOL "Coverage")
-
 add_executable(big_integer_testing
         ./big_integer_testing.cpp
-        ./big_integer.h
-        ./big_integer.cpp)
+        ./big_integer.h ./big_integer.cpp
+        ./my_vector.cpp ./my_vector.h
+        ./gtest/gtest-all.cc
+        ./gtest/gtest.h
+        ./gtest/gtest_main.cc)
 
-find_package(Threads)
-target_link_libraries(big_integer_testing gtest ${CMAKE_THREAD_LIBS_INIT})
+if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -pedantic -O3")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ")
+  set(CMAKE_CXX_FLAGS_RELEASE " ${CMAKE_CXX_FLAGS_RELEASE} ")
 
-target_compile_options(big_integer_testing PRIVATE -std=c++17 -g)
+endif()
 
-if (COVERAGE)
-    target_compile_options(big_integer_testing PRIVATE --coverage)
-    set_target_properties(big_integer_testing PROPERTIES LINK_FLAGS --coverage)
-endif ()
+target_link_libraries(big_integer_testing -lpthread -lgmp -lgmpxx)

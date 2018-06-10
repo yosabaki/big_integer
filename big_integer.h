@@ -2,15 +2,17 @@
 #define BIG_INTEGER_H
 
 #include <cstddef>
-#include <vector>
+#include "my_vector.h"
 #include <iosfwd>
+#include <cstdint>
+#include <vector>
 
 struct big_integer {
     big_integer();
 
     big_integer(big_integer const &other);
 
-    big_integer(unsigned int a);
+    big_integer(uint32_t a);
 
     big_integer(int a);
 
@@ -66,12 +68,12 @@ struct big_integer {
 
     friend bool operator>=(big_integer const &a, big_integer const &b);
 
-    friend big_integer operator*(big_integer a, unsigned int const &b);
+    friend big_integer operator*(big_integer a, uint32_t const &b);
 
     friend std::string to_string(big_integer const &a);
 
     friend
-    big_integer operator*(big_integer a, unsigned int const &b);
+    big_integer operator*(big_integer a, uint32_t const &b);
 
 private:
 
@@ -89,20 +91,18 @@ private:
 
     big_integer &sub_from(big_integer const &rhs, int pos);
 
-    big_integer &add_from(big_integer const &rhs, int pos);
-
     big_integer divide2n1n(big_integer &rhs);
 
     void delete_leading_zeros();
 
     bool is_zero() const;
 
-    std::vector<unsigned int> digits;
-    bool sign = 0;
+    my_vector digits;
+    bool sign = false;
 
     int cmp(big_integer const &b) const;
 
-    unsigned int get_digit(size_t i) const;
+    uint32_t get_digit(size_t i) const;
 
     size_t size() const;
 };
@@ -114,7 +114,7 @@ big_integer operator+(big_integer a, big_integer const &b);
 
 big_integer operator-(big_integer a, big_integer const &b);
 
-big_integer operator*(big_integer a, unsigned int const &b);
+big_integer operator*(big_integer a, uint32_t const &b);
 
 big_integer operator*(big_integer a, big_integer const &b);
 

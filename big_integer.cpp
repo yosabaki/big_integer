@@ -3,17 +3,20 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
-#include <cstdint>
 #include <cctype>
 #include <stdexcept>
 
-big_integer::big_integer() : sign(false), digits{0, 0} {
+
+big_integer::big_integer() : sign(false), digits(2, 0) {
 }
 
 big_integer::big_integer(big_integer const &other) : digits(other.digits), sign(other.sign) {
 }
 
-big_integer::big_integer(uint32_t a) : sign(false), digits{a, 0} {}
+big_integer::big_integer(uint32_t a) : sign(false), digits(2) {
+    digits[0] = a;
+    digits[1] = 0;
+}
 
 big_integer::big_integer(int a) {
     digits.assign(2, 0);
@@ -54,7 +57,7 @@ big_integer::big_integer(std::string const &str) {
 
 big_integer &big_integer::operator=(big_integer const &other) {
     big_integer temp(other);
-    std::swap(digits, temp.digits);
+    digits.swap(temp.digits);
     std::swap(sign, temp.sign);
     return *this;
 }
@@ -117,6 +120,7 @@ big_integer &big_integer::sub_from(big_integer const &rhs, int pos) {
     uint32_t word = (!rhs.sign ? UINT32_MAX : 0);
     uint64_t tmp = 0;
     char carry = 1;
+    digits.resize(std::max(rhs.size()+pos,size()),0-sign);
     for (size_t i = 0; i < rhs.size(); i++) {
         tmp = static_cast<uint64_t>(digits[i + pos]) + ~rhs.digits[i] + carry;
         digits[i + pos] = static_cast<uint32_t >(tmp);
@@ -143,7 +147,7 @@ big_integer big_integer::divide2n1n(big_integer &rhs) {
     l--;
     digits.resize(l - r + 1);
     for (int j = l - r; j > -1; j--) {
-        uint64_t a = ((static_cast<uint64_t> (left.digits[j + r]) << 32u) + left.digits[j + r - 1]);
+        uint64_t a = ((static_cast<uint64_t> (left.get_digit(j + r)) << 32u) + left.get_digit(j + r - 1));
         uint64_t qi = std::min(a / b, static_cast<uint64_t> (UINT32_MAX));
         uint64_t ri = a % b;
         while (ri < UINT32_MAX && qi * rhs.get_digit(r - 2) > (ri << 32u) + left.get_digit(j + r - 2)) {
@@ -204,7 +208,7 @@ big_integer &big_integer::operator^=(big_integer const &rhs) {
 
 void big_integer::delete_leading_zeros() {
     uint32_t word = (sign ? UINT32_MAX : 0);
-    if (digits[size() - 1] != word) {
+    if (digits.back() != word) {
         digits.push_back(word);
         return;
     }
