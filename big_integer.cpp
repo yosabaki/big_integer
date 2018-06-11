@@ -10,8 +10,7 @@
 big_integer::big_integer() : sign(false), digits(2, 0) {
 }
 
-big_integer::big_integer(big_integer const &other) : digits(other.digits), sign(other.sign) {
-}
+big_integer::big_integer(big_integer const &other) = default;
 
 big_integer::big_integer(uint32_t a) : sign(false), digits(2) {
     digits[0] = a;
@@ -120,7 +119,7 @@ big_integer &big_integer::sub_from(big_integer const &rhs, int pos) {
     uint32_t word = (!rhs.sign ? UINT32_MAX : 0);
     uint64_t tmp = 0;
     char carry = 1;
-    digits.resize(std::max(rhs.size()+pos,size()),0-sign);
+    digits.resize(std::max(rhs.size() + pos, size()), 0 - sign);
     for (size_t i = 0; i < rhs.size(); i++) {
         tmp = static_cast<uint64_t>(digits[i + pos]) + ~rhs.digits[i] + carry;
         digits[i + pos] = static_cast<uint32_t >(tmp);
@@ -229,7 +228,7 @@ big_integer &big_integer::operator<<=(int rhs) {
                     static_cast<uint32_t >(static_cast<uint64_t > (digits[i - prev - 1]) >> (32 - step));
     }
     digits[prev] = digits[0] << step;
-    for (int i = 0; i < prev; i++) {
+    for (size_t i = 0; i < prev; i++) {
         digits[i] = 0;
     }
     sign = static_cast<bool>(digits.back());

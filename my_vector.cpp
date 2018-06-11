@@ -7,7 +7,7 @@
 #include <assert.h>
 #include "my_vector.h"
 
-my_vector::my_vector() : is_small(1), _size(0) {}
+my_vector::my_vector() : _size(0), is_small(1) {}
 
 my_vector::my_vector(size_t s) : _size(s) {
     if (s > _SIZE) {
@@ -161,10 +161,9 @@ void my_vector::ensure_capacity(size_t _n) {
         return;
     }
     if (!big.data.unique()) {
-        auto tmp = new uint32_t[_n * 2 + 1];
-        memcpy(tmp, big.data.get(), std::min(_size, _n) * sizeof(uint32_t));
-        big.~dynamic_data();
-        new(&big) dynamic_data(tmp, _n * 2 + 1);
+        auto tmp = new uint32_t[capacity()];
+        memcpy(tmp, big.data.get(), _size * sizeof(uint32_t));
+        big.data.reset(tmp);
     }
 }
 

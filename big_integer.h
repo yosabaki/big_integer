@@ -97,8 +97,8 @@ private:
 
     bool is_zero() const;
 
-    my_vector digits;
     bool sign = false;
+    my_vector digits;
 
     int cmp(big_integer const &b) const;
 

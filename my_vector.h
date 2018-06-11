@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <variant>
 #include <memory>
 
 class my_vector {
@@ -50,9 +49,7 @@ private:
     void ensure_capacity(size_t _n);
 
     static const uint32_t _SIZE = 4;
-    bool is_small;
     size_t _size;
-
     struct dynamic_data {
         std::shared_ptr<uint32_t[]> data;
         size_t capacity;
@@ -68,6 +65,8 @@ private:
         dynamic_data big;
         uint32_t small[_SIZE];
     };
+
+    bool is_small;
 };
 
 

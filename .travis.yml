@@ -16,6 +16,3 @@ script:
   - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake -DCOVERAGE=1 .
   - cmake --build .
   - ./big_integer_testing
-
-after_success:
-- coveralls --root . -E ".*gtest.*" -E ".*CMakeFiles.*"
